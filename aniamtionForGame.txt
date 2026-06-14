@@ -1,0 +1,85 @@
+using UnityEngine;
+using UnityEngine.UI;
+using DG.Tweening;
+
+public class UIPopupAnimator : MonoBehaviour
+{
+    public RectTransform card;
+    public Image background;
+
+    public float duration = 0.18f;
+
+    private CanvasGroup canvasGroup;
+
+    private readonly Vector3 hiddenScale = Vector3.one * 0.68f;
+    private readonly Vector3 shownScale = Vector3.one * 0.8f;
+
+    void Awake()
+    {
+        if (card == null)
+            card = GetComponentInChildren<RectTransform>();
+
+        canvasGroup = card.GetComponent<CanvasGroup>();
+
+        if (canvasGroup == null)
+            canvasGroup = card.gameObject.AddComponent<CanvasGroup>();
+
+        card.localScale = hiddenScale;
+        canvasGroup.alpha = 0f;
+
+        if (background != null)
+        {
+            Color c = background.color;
+            c.a = 0f;
+            background.color = c;
+        }
+
+        card.gameObject.SetActive(false);
+    }
+
+    public void Open()
+    {
+        card.DOKill();
+        canvasGroup.DOKill();
+
+        if (background != null)
+            background.DOKill();
+
+        card.gameObject.SetActive(true);
+
+        card.localScale = hiddenScale;
+        canvasGroup.alpha = 0f;
+
+        if (background != null)
+            background.DOFade(0.6f, duration).SetEase(Ease.Linear);
+
+        Sequence seq = DOTween.Sequence();
+        seq.Join(card.DOScale(shownScale, duration).SetEase(Ease.OutQuad));
+        seq.Join(canvasGroup.DOFade(1f, duration).SetEase(Ease.Linear));
+        seq.SetUpdate(true);
+    }
+
+    public void Close()
+    {
+        card.DOKill();
+        canvasGroup.DOKill();
+
+        if (background != null)
+            background.DOKill();
+
+        Sequence seq = DOTween.Sequence();
+
+        seq.Join(card.DOScale(hiddenScale, duration).SetEase(Ease.InQuad));
+        seq.Join(canvasGroup.DOFade(0f, duration).SetEase(Ease.Linear));
+
+        if (background != null)
+            seq.Join(background.DOFade(0f, duration).SetEase(Ease.Linear));
+
+        seq.SetUpdate(true);
+
+        seq.OnComplete(() =>
+        {
+            card.gameObject.SetActive(false);
+        });
+    }
+}

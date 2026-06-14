@@ -1,0 +1,252 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using TMPro;
+using DG.Tweening;
+
+public class TutorialManager : MonoBehaviour
+{
+    public static TutorialManager Instance;
+
+    [Header("UI References")]
+    public GameObject tutorialPanel;
+    public TextMeshProUGUI instructionText;
+    public RectTransform pointerArrow;
+
+    [Header("Positioning Settings")]
+    [Tooltip("How high in 3D world space the arrow floats above the car")]
+    public float verticalWorldOffset = 2.5f;
+
+    [Header("Fine-Tuning (Pixel Offsets)")]
+    [Tooltip("Nudge the arrow left/right in screen pixels")]
+    public float pixelOffsetX = 0f;
+    [Tooltip("Nudge the arrow up/down in screen pixels")]
+    public float pixelOffsetY = 0f;
+
+    [Header("Bounce Settings")]
+    [Tooltip("How much the UI arrow bounces up and down in pixels")]
+    public float uiBounceAmount = 30f;
+    [Tooltip("How fast the UI arrow bounces")]
+    public float uiBounceSpeed = 0.5f;
+
+    private int currentStep = 0;
+    private CarMover mainCar = null;
+    private CarMover blockerCar = null;
+    private CarMover targetCar = null;
+    private bool isTutorialActive = false;
+
+    private Camera mainCamera;
+
+    void Awake()
+    {
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
+
+        mainCamera = Camera.main;
+    }
+
+    void Start()
+    {
+        CheckStartTutorial();
+    }
+
+    void LateUpdate()
+    {
+        if (isTutorialActive && targetCar != null && pointerArrow != null)
+        {
+            // 1. Convert the 3D car position + vertical offset to Screen Space
+            Vector3 worldPos = targetCar.transform.position + new Vector3(0, verticalWorldOffset, 0);
+            Vector3 screenPos = mainCamera.WorldToScreenPoint(worldPos);
+
+            // 2. Apply the custom fine-tuning pixel offsets
+            screenPos.x += pixelOffsetX;
+            screenPos.y += pixelOffsetY;
+
+            // 3. Apply the bouncing animation
+            float bounce = Mathf.Sin(Time.time * (Mathf.PI * 2 / uiBounceSpeed)) * (uiBounceAmount / 2f);
+            screenPos.y += bounce;
+
+            // 4. Position the UI Arrow
+            pointerArrow.position = screenPos;
+        }
+    }
+
+    public void CheckStartTutorial()
+    {
+        if (SaveData.Instance != null && SaveData.Instance.CurrentSave.currentLevel == 1)
+        {
+            StartTutorial();
+        }
+        else
+        {
+            ForceClose();
+        }
+    }
+
+    private void StartTutorial()
+    {
+        isTutorialActive = true;
+        if (tutorialPanel != null) tutorialPanel.SetActive(true);
+        if (pointerArrow != null) pointerArrow.gameObject.SetActive(true);
+        currentStep = 0;
+
+        StartCoroutine(TutorialSequence());
+    }
+
+    private IEnumerator TutorialSequence()
+    {
+        yield return new WaitUntil(() => ParkingGameManager.Instance != null && !ParkingGameManager.Instance.isLevelLoading);
+        yield return new WaitForSeconds(0.5f);
+
+        bool pairFound = FindTutorialTargetPair(out mainCar, out blockerCar);
+
+        if (!pairFound)
+        {
+            ForceClose();
+            yield break;
+        }
+
+        // --- STEP 1 ---
+        targetCar = mainCar;
+        ColorOfCarAndPassengers firstColor = ParkingGameManager.Instance.waitingPassengers[0].passengertype;
+        instructionText.text = $"The first passenger is {firstColor}. Tap the matching car in the grid!";
+
+        if (blockerCar != null)
+        {
+            yield return new WaitUntil(() => currentStep == 1);
+
+            // --- STEP 2 ---
+            targetCar = blockerCar;
+            instructionText.text = "It's blocked! Tap the blocking car first to clear the path.";
+            yield return new WaitUntil(() => currentStep == 2);
+
+            // --- STEP 3 ---
+            targetCar = mainCar;
+            instructionText.text = "The path is clear! Now tap the matching car to park it.";
+            yield return new WaitUntil(() => currentStep == 3);
+        }
+        else
+        {
+            yield return new WaitUntil(() => currentStep == 1);
+        }
+
+        // --- STEP 4 ---
+        instructionText.text = "Great job! Keep matching passenger colors to clear the level!";
+
+        if (pointerArrow != null) pointerArrow.gameObject.SetActive(false);
+
+        yield return new WaitForSeconds(3f);
+        ForceClose();
+    }
+
+    public bool IsTutorialActive()
+    {
+        return isTutorialActive;
+    }
+
+    public GameObject GetTargetCarObject()
+    {
+        return targetCar != null ? targetCar.gameObject : null;
+    }
+
+    public void OnCarClicked(GameObject clickedCar)
+    {
+        if (!isTutorialActive) return;
+
+        if (targetCar != null && clickedCar == targetCar.gameObject)
+        {
+            currentStep++;
+        }
+    }
+
+    public void ForceClose()
+    {
+        isTutorialActive = false;
+        targetCar = null;
+
+        if (pointerArrow != null)
+        {
+            pointerArrow.gameObject.SetActive(false);
+        }
+
+        if (tutorialPanel != null)
+        {
+            tutorialPanel.SetActive(false);
+        }
+    }
+
+    private bool FindTutorialTargetPair(out CarMover matching, out CarMover blocker)
+    {
+        matching = null;
+        blocker = null;
+
+        if (ParkingGameManager.Instance == null || ParkingGameManager.Instance.waitingPassengers.Count == 0)
+            return false;
+
+        ColorOfCarAndPassengers firstColor = ParkingGameManager.Instance.waitingPassengers[0].passengertype;
+        CarMover[] cars = FindObjectsOfType<CarMover>();
+
+        foreach (var car in cars)
+        {
+            if (car == null || !car.gameObject.activeInHierarchy || car.isParked) continue;
+
+            if (car.carType == firstColor)
+            {
+                Carout carout = car.GetComponent<Carout>();
+                if (carout != null && carout.CheckForBlockage())
+                {
+                    CarMover obstacle = FindCarAtGrid(carout.blockingGridIndex.x, carout.blockingGridIndex.y);
+                    if (obstacle != null && !obstacle.isParked)
+                    {
+                        matching = car;
+                        blocker = obstacle;
+                        return true;
+                    }
+                }
+            }
+        }
+
+        foreach (var car in cars)
+        {
+            if (car == null || !car.gameObject.activeInHierarchy || car.isParked) continue;
+
+            if (car.carType == firstColor)
+            {
+                matching = car;
+                blocker = null;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private CarMover FindCarAtGrid(int col, int row)
+    {
+        CarMover[] cars = FindObjectsOfType<CarMover>();
+        foreach (var car in cars)
+        {
+            Carout carout = car.GetComponent<Carout>();
+            if (carout != null && carout.currentGridIndex.x == col && carout.currentGridIndex.y == row)
+            {
+                return car;
+            }
+        }
+        return null;
+    }
+}
+
+
+pixel offset x = -80
+
+in side lelvel maager 
+
+  public void LoadLevel()
+  {
+      // ── ADD THESE LINES HERE ──
+      if (TutorialManager.Instance != null)
+      {
+          TutorialManager.Instance.CheckStartTutorial();
+      }
+
+      LevelData currentLevel;

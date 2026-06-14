@@ -1,0 +1,68 @@
+**Yes, I can absolutely generate images!** If you need any 2D visual assets, button designs, icons, or UI mockup sketches, just let me know and I will generate them for you.
+
+Here is your step-by-step Unity guide to setting up the **Button Shine**, **Button Pulse**, and the **Background Particle System**.
+
+---
+
+### Step 1: Set up the Button Shine (PLAY Button)
+This creates the sweeping light glare effect across your main Play button.
+
+1. **Hierarchy Setup**:
+   * Select your **PLAY** button GameObject in the Hierarchy.
+   * Add a **RectMask2D** component to the button (via *Add Component* in the Inspector). This clips the shine so it doesn't spill outside the button edges.
+   * Right-click the **PLAY** button and select **UI -> Image** to create a child Image. Name it `ShineImage`.
+2. **Style the Shine**:
+   * Select the `ShineImage`. Set its height in the RectTransform to cover the button, and set its width to about `60` or `80`.
+   * Set its rotation **Z to -20** in the Transform component so it sits at a diagonal angle.
+   * Set its color to **White** and slide the **Alpha (A) transparency slider to around 80** (out of 255) so it is semi-transparent.
+3. **Attach and Link Script**:
+   * Attach the `UIJuiceEffects` script to the **PLAY** button.
+   * Set **Active Effect** to `ButtonShine`.
+   * Drag your child `ShineImage` GameObject into the **Shine Image** slot in the Inspector.
+   * Set **Shine Duration** to `1.2` and **Shine Cooldown** to `3` seconds.
+   * Ensure **Play On Start** is checked.
+
+---
+
+### Step 2: Set up the Button Pulse (Shop & Rewards Buttons)
+This makes buttons heartbeat up and down to attract the player's eye when they can purchase something or claim a bonus.
+
+1. **Hierarchy Setup**:
+   * Select the **Shop** button (or **Rewards** button) in the Hierarchy.
+   * Attach the `UIJuiceEffects` script to it.
+2. **Configure in Inspector**:
+   * Set **Active Effect** to `Pulse`.
+   * Set **Pulse Speed** to `1` (takes 1 second to cycle up and down).
+   * Set **Pulse Scale** to `1.08` (button will scale up to 108% of its original size).
+   * If you want it to play all the time: Check **Play On Start**.
+3. **(Optional) Trigger only when a reward is ready**:
+   * Uncheck **Play On Start**.
+   * In your shop/reward script, whenever a claim becomes available, call:
+     `GetComponent<UIJuiceEffects>().PlayEffect();`
+   * Once claimed, stop it by calling:
+     `GetComponent<UIJuiceEffects>().StopEffect();`
+
+---
+
+### Step 3: Set up the Background Atmosphere (Drifting Orange Dust/Motes)
+This turns your static main menu background into a living, moving street scene by drifting glowing orange specs.
+
+1. **Create Particle System**:
+   * Right-click in the Hierarchy and select **Effects -> Particle System**. Name it `AtmosphereParticles`.
+   * Drag it so it sits in 3D space directly in front of your Main Camera viewport.
+2. **Configure Particle Inspector** (Set these modules):
+   * **Main Module**:
+     * **Start Lifetime**: `6` to `8` seconds.
+     * **Start Speed**: `0.3` (makes them float slowly).
+     * **Start Size**: Random Between Two Constants: `0.05` and `0.15` (tiny specs).
+     * **Start Color**: Soft orange-yellow with low opacity (e.g., `#FFE4A0` with Alpha around `120`).
+     * **Gravity Modifier**: `0.02` (gives a tiny downward pull).
+   * **Emission Module**:
+     * **Rate over Time**: `6` (keeps it subtle; too many particles will clutter the UI).
+   * **Shape Module**:
+     * **Shape**: **Box**.
+     * **Scale**: Set X to `15`, Y to `10`, Z to `1` (adjust so the box spans the width and height of what the camera sees).
+   * **Velocity over Lifetime Module** (Check to enable):
+     * Set **Linear X** to `-0.3` (drifts them gently to the left like a breeze).
+   * **Size over Lifetime Module** (Check to enable):
+     * Click the Curve graph. Select the curve that rises from 0, peaks at 1, and drops back to 0. This makes particles fade-in and fade-out smoothly instead of popping out of existence.

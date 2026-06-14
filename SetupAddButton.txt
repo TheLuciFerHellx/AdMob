@@ -1,0 +1,20 @@
+Here is the simple, step-by-step setup to put an AdMob ad on **any button**:
+
+### Step 1: Create the Ad Manager (Do this once)
+1. Create an empty GameObject in your main menu scene and name it `AdMobManager`.
+2. Attach the **`AdMobManager.cs`** script to it.
+
+---
+
+### Step 2: Attach the Ad to a Button
+1. Select the **Button** you want to play an ad (for example, the "Claim X2" or "Free Coins" button).
+2. Attach the **`AdMobButtonHelper.cs`** script to it.
+3. In the Inspector for that button, configure:
+   * **Ad Type**: Set it to **`Rewarded`** (plays video for coins) or **`Interstitial`** (skippable popup).
+   * **Coin Reward**: Set the amount of coins (e.g., `100` or `500`) the player gets for watching.
+
+---
+
+### How to Test It in Unity
+* **Inside Unity Editor**: When you click the button, it will immediately print *"Mock Ad Showing"* in the console and give you the coins instantly (so you don't have to wait during development).
+* **On Real Phone**: Once you import the AdMob SDK package and add `USE_ADMOB` in your scripting define settings, it will play a real video ad before giving the reward.
