@@ -1,0 +1,25 @@
+I will make sure that when you delete the JSON save file, all power-up tutorial `PlayerPrefs` reset automatically.
+
+To do this, we modify the `DeleteSave()` function in [SaveData.cs](file:///c:/Users/ABHAYprajapati/Downloads/Car-OUT-jam-puzzle-Game-Grid/Car-OUT-jam-puzzle-Game-Grid/Assets/Script/SaveData/SaveData.cs#L304) like this:
+
+```csharp
+public void DeleteSave()
+{
+    if (File.Exists(FilePath))
+    {
+        File.Delete(FilePath);
+    }
+
+    // ── Reset tutorial PlayerPrefs ──
+    PlayerPrefs.DeleteKey("pup_tut_4_seen");
+    PlayerPrefs.DeleteKey("pup_tut_6_seen");
+    PlayerPrefs.DeleteKey("pup_tut_7_seen");
+    PlayerPrefs.Save();
+
+    Debug.Log("SAVE DELETED & TUTORIAL PREFS RESET");
+
+    Application.Quit();
+}
+```
+
+This way, whenever a save reset happens, the tutorials will show again perfectly! Do you want me to start writing the code files and applying these changes to your project now?
