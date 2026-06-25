@@ -1050,3 +1050,206 @@ public class SpinWheelController : MonoBehaviour
 
 > [!WARNING]
 > If you use **DOTween Safe Mode**, make sure `DOTween.Kill(this)` in `ResetForNewLevel()` won't throw errors. Safe mode handles this gracefully by default.
+
+
++++++++++++++++++++++++++++++++++++++++++++CustomeLevelEditor+++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Here is a **clean, structured, “copy-paste ready” prompt for Antigravity / AI refactor tool** based on your full system.
+
+It includes:
+
+* NO breaking existing gameplay
+* NO changes unless required
+* Image → grid generation system
+* Dynamic vehicle sizes (car/bus)
+* Safe refactor rules
+* Requirement for MD documentation
+* Strong safety around runtime flow
+
+---
+
+## ✅ ANTI-GRAVITY PROMPT (COPY THIS)
+
+```text
+You are working inside an existing Unity project that already has a fully functional car puzzle / grid-based gameplay system.
+
+CRITICAL RULE:
+Do NOT break existing gameplay flow under any condition. The current game must continue to run exactly as it is. If any change risks breaking gameplay, you must either:
+1. Preserve old logic, OR
+2. Add new logic as optional fallback only.
+
+------------------------------------------------------------
+🎯 MAIN GOAL
+------------------------------------------------------------
+
+Implement a NEW “Image-to-Grid Level Generator” system inside the existing LevelEditorWindow.
+
+This system must:
+- Convert imported images into grid-based puzzle layouts
+- Support scaling any image (small or large) into a fixed or dynamic grid
+- Work with current LevelData system
+- NOT replace existing manual grid editor (it should still work)
+
+------------------------------------------------------------
+🧠 IMAGE TO GRID REQUIREMENTS
+------------------------------------------------------------
+
+1. User imports a Texture2D image in editor.
+2. Image is NOT pixel-to-cell mapping.
+3. Instead:
+   - Image is analyzed in regions
+   - Each grid cell samples a region of the image
+   - Result is normalized into current grid size (example: 7x7, 9x9, 11x11)
+
+4. Image must be automatically:
+   - Cropped (remove empty/white space)
+   - Centered
+   - Scaled to fit grid shape
+
+5. Output:
+   bool[,] drawnPattern
+
+6. Dark areas in image = active car spawn cells
+7. Light areas = empty cells
+
+------------------------------------------------------------
+🚗 VEHICLE SYSTEM (IMPORTANT)
+------------------------------------------------------------
+
+The game supports multiple vehicle types:
+
+- Small Car (1x1 or 1x2)
+- Medium Car (1x2 or 1x3)
+- Bus (larger footprint, configurable size)
+
+You MUST implement or extend system so that:
+
+✔ Vehicles are NOT fixed-size assumptions
+✔ Each vehicle has a footprint size (width, height)
+✔ Grid placement must respect footprint collision
+✔ Vehicles must never overlap
+✔ Grid must validate placement before spawning
+
+Add a clean abstraction like:
+
+VehicleSize / Footprint system
+
+Example:
+- SmallCar → 1x1
+- Sedan → 1x2
+- Bus → 1x3 or larger
+
+------------------------------------------------------------
+🚗 SPAWN SYSTEM RULES
+------------------------------------------------------------
+
+- Must integrate with existing SpawnCars system
+- Must NOT break current LevelData loading
+- Must preserve current car spawn logic
+
+If image-based system exists:
+- It should override ONLY pattern generation
+- NOT override runtime spawn logic
+
+------------------------------------------------------------
+🔁 COMPATIBILITY RULE
+------------------------------------------------------------
+
+Existing systems MUST continue working:
+- Manual grid editor
+- Legacy LevelData (carsToSpawn fallback)
+- Current spawn logic in SpawnCars
+- Object pooling system
+- Car movement logic
+
+If needed:
+- Use feature flags or optional toggles
+
+------------------------------------------------------------
+📦 LEVELDATA RULE
+------------------------------------------------------------
+
+Extend LevelData ONLY if necessary.
+
+Must still support:
+- gridColumns
+- gridRows
+- carSpawns (existing system)
+- carsToSpawn fallback
+
+Do NOT break serialization.
+
+------------------------------------------------------------
+🚗 CAR ROTATION SYSTEM
+------------------------------------------------------------
+
+Existing system uses:
+- 0, 45, 90, 135, 180, 225, 270, 315 degrees
+
+Ensure:
+- Image-generated layouts still support outward-facing rotation logic
+- Do NOT break CalculateOutwardDirection logic
+- Maintain compatibility with SpawnCars rotation system
+
+------------------------------------------------------------
+⚡ PERFORMANCE RULE
+------------------------------------------------------------
+
+- Use cached pixel reads if possible
+- Avoid per-frame computation
+- Editor-only heavy processing is allowed
+- Runtime must remain fast
+
+------------------------------------------------------------
+📘 DOCUMENTATION REQUIREMENT (MANDATORY)
+------------------------------------------------------------
+
+Before finishing:
+Generate a detailed MARKDOWN FILE explaining:
+
+1. Architecture overview
+2. Image-to-grid algorithm
+3. Vehicle footprint system
+4. Integration with SpawnCars
+5. LevelData structure
+6. How to extend system
+7. Performance considerations
+8. Known limitations
+
+File name:
+IMAGE_LEVEL_SYSTEM.md
+
+------------------------------------------------------------
+🚨 SAFETY RULE
+------------------------------------------------------------
+
+If any change can break gameplay:
+- DO NOT apply it directly
+- Provide backward-compatible alternative
+- Or wrap in optional toggle
+
+------------------------------------------------------------
+✅ FINAL GOAL
+------------------------------------------------------------
+
+After implementation:
+- Game must run exactly like before
+- New system must be optional enhancement
+- Designers should be able to generate levels from images
+- Vehicles must support multiple sizes correctly
+- No spawning bugs or overlap issues
+```
+
+---
+
+## If you want next upgrade (I can help)
+
+I can also help you design:
+
+* 🔥 Smart “AI level generator from doodles”
+* 🔥 Road/path detection instead of just blocks
+* 🔥 Automatic difficulty balancing
+* 🔥 Traffic-style simulation mode
+* 🔥 True puzzle solver validation (no unsolvable levels)
+
+Just tell me 👍
